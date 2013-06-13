@@ -3,6 +3,7 @@ package alex.trotsenko.doggy;
 import java.util.ArrayList;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
@@ -12,6 +13,8 @@ import android.widget.Toast;
 public class Venues extends Activity
 {
 
+   static final int LOGIN_REQUEST = 1;  // The request code
+   
    @Override
    protected void onCreate(Bundle savedInstanceState)
    {
@@ -54,7 +57,23 @@ public class Venues extends Activity
     */
    public void addVenue(View view)
    {
-      // TODO
+      //TODO check where user have been already logged on.
+      Intent loginIntent = new Intent(this, LoginActivity.class);
+      startActivityForResult(loginIntent, LOGIN_REQUEST);
    }
 
+   @Override
+   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+       // Check which request we're responding to
+       if (requestCode == LOGIN_REQUEST) {
+           // Make sure the request was successful
+           if (resultCode == RESULT_OK) {
+              Toast.makeText(this, "User come from login page ", Toast.LENGTH_LONG)
+              .show();
+              
+              //TODO react to login action
+           }
+       }
+   }
+   
 }

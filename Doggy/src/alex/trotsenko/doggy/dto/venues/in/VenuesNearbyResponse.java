@@ -10,25 +10,13 @@ public class VenuesNearbyResponse
    {
       return status;
    }
-   public void setStatus(int status)
-   {
-      this.status = status;
-   }
    public String getProcName()
    {
       return procName;
    }
-   public void setProcName(String procName)
-   {
-      this.procName = procName;
-   }
    public VenueContainer getVenues()
    {
       return Venues;
-   }
-   public void setVenues(VenueContainer venues)
-   {
-      Venues = venues;
    }
    
    

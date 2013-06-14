@@ -1,7 +1,6 @@
 package alex.trotsenko.doggy;
 
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +26,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
@@ -79,20 +79,47 @@ public class VenuesActivity extends Activity
 
    private CurrentUserLocation initializeLocation()
    {
-      validateLocationAccessibility();
-      
-      CurrentUserLocation currenLocation = new CurrentUserLocation();
-      currenLocation.setLatitude(52.5295667f);
-      currenLocation.setLongitude(13.4564908f);
-      return currenLocation;
-   }
-
-   private void validateLocationAccessibility()
-   {
       LocationManager locator = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
       boolean gpsLocationAccessible = locator.isProviderEnabled(LocationManager.GPS_PROVIDER);
-      boolean networkLocationAccessible = locator.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+      boolean networkLocationAccessible = locator
+            .isProviderEnabled(LocationManager.NETWORK_PROVIDER);
 
+      validateLocationAccessibility(gpsLocationAccessible, networkLocationAccessible);
+
+      CurrentUserLocation currenLocation = new CurrentUserLocation();
+      if (networkLocationAccessible)
+      {
+         Location location = locator.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+         if (null != location)
+         {
+            currenLocation.setLatitude(location.getLatitude());
+            currenLocation.setLongitude(location.getLongitude());
+         }
+      }
+
+      if (gpsLocationAccessible)
+      {
+         Location location = locator.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+         if (null != location)
+         {
+            currenLocation.setLatitude(location.getLatitude());
+            currenLocation.setLongitude(location.getLongitude());
+         }
+      }
+
+      //Send Fake location for testing if not any
+      if (!currenLocation.isInitialized())
+      {
+         currenLocation.setLatitude(52.5295667f);
+         currenLocation.setLongitude(13.4564908f);
+      }
+      return currenLocation;
+
+   }
+
+   private void validateLocationAccessibility(boolean gpsLocationAccessible,
+         boolean networkLocationAccessible)
+   {
       if (!gpsLocationAccessible && !networkLocationAccessible)
       {
 
@@ -100,18 +127,18 @@ public class VenuesActivity extends Activity
          builder.setTitle("Required Location data");
          builder.setMessage("Application have to access either GPS or network location data");
 
-         builder.setPositiveButton("Make location setting accessible", new DialogInterface.OnClickListener()
-         {
+         builder.setPositiveButton("Make location setting accessible",
+               new DialogInterface.OnClickListener()
+               {
 
-            public void onClick(DialogInterface dialog, int which)
-            {
+                  public void onClick(DialogInterface dialog, int which)
+                  {
 
-               Intent settingsIntent = new Intent(
-                     Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-               startActivity(settingsIntent);
-               dialog.dismiss();
-            }
-         });
+                     Intent settingsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                     startActivity(settingsIntent);
+                     dialog.dismiss();
+                  }
+               });
 
          builder.setNegativeButton("Close application", new DialogInterface.OnClickListener()
          {
@@ -127,7 +154,6 @@ public class VenuesActivity extends Activity
          alert.show();
 
       }
-      
    }
 
    /** This methods is call back for for addVenue button.

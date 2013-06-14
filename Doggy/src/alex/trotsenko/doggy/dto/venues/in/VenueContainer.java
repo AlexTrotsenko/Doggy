@@ -9,12 +9,5 @@ public class VenueContainer
    public List<VenueInfo> getVenue()
    {
       return Venue;
-   }
-
-   public void setVenue(List<VenueInfo> venueHolder)
-   {
-      Venue = venueHolder;
-   }
-   
-   
+   }   
 }

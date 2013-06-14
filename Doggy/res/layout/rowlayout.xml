@@ -10,19 +10,55 @@
 
     <ImageView
         android:id="@+id/icon"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginLeft="4px"
         android:layout_marginRight="10px"
         android:layout_marginTop="4px" >
     </ImageView>
 
-    <TextView
-        android:id="@+id/label"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@+id/label"
-        android:textSize="20px" >
-    </TextView>
+        android:orientation="vertical" >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:id="@+id/venue_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@+id/venue_name"
+                android:textSize="20sp" >
+            </TextView>
+            
+            <TextView
+                android:id="@+id/distance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@+id/distance"
+                android:textSize="12sp" >
+            </TextView>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/street_and_city"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@+id/street_and_city"
+            android:textSize="16sp" >
+        </TextView>
+
+        <TextView
+            android:id="@+id/size_allowed"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@+id/size_allowed"
+            android:textSize="12sp" >
+        </TextView>
+    </LinearLayout>
 
 </LinearLayout>

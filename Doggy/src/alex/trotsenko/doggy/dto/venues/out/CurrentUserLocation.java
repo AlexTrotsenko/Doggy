@@ -1,10 +1,23 @@
 package alex.trotsenko.doggy.dto.venues.out;
 
+
 public class CurrentUserLocation
 {
    private final int range = 25000000;
    private double latitude;
    private double longitude;
+
+   
+   
+   public CurrentUserLocation()
+   {
+   }
+   
+   public CurrentUserLocation(double latitude, double longitude)
+   {
+      this.latitude = latitude;
+      this.longitude = longitude;
+   }
 
    public void setLatitude(double latitude)
    {
@@ -15,9 +28,5 @@ public class CurrentUserLocation
    {
       this.longitude = longitude;
    }
-   
-   public boolean isInitialized()
-   {
-      return latitude != 0.0 && longitude != 0.0;
-   }
+
 }

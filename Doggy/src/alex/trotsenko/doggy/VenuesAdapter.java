@@ -27,9 +27,9 @@ public class VenuesAdapter extends ArrayAdapter<VenueInfo>
    {
       private TextView venueName;
       private ImageView icon;
-      public TextView distance;
-      public TextView streetAndCity;
-      public TextView sizeAllowed;
+      private TextView distance;
+      private TextView streetAndCity;
+      private TextView sizeAllowed;
    }
 
    @Override

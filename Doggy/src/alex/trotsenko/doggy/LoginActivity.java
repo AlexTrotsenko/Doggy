@@ -1,7 +1,5 @@
 package alex.trotsenko.doggy;
 
-import com.google.gson.Gson;
-
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;

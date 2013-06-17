@@ -21,13 +21,15 @@ import org.apache.http.util.EntityUtils;
 import alex.trotsenko.doggy.dto.venues.in.VenueInfo;
 import alex.trotsenko.doggy.dto.venues.in.VenuesNearbyResponse;
 import alex.trotsenko.doggy.dto.venues.out.CurrentUserLocation;
+import alex.trotsenko.doggy.translators.LocationTranslator;
+import alex.trotsenko.doggy.utils.LocationAccuracy;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.location.Criteria;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -46,6 +48,8 @@ public class VenuesActivity extends Activity
    static final int LOGIN_REQUEST = 1; // The request code
    private List<VenueInfo> venues = new ArrayList<VenueInfo>();
    private VenuesAdapter adapter;
+   private Location lastLocation;
+   private LocationListener locationUpdatesListener;
 
    @Override
    protected void onCreate(Bundle savedInstanceState)
@@ -54,14 +58,8 @@ public class VenuesActivity extends Activity
       setContentView(R.layout.activity_venues);
 
       final ListView venuesListview = (ListView) findViewById(R.id.venuesListview);
-
-      CurrentUserLocation currenLocation = initializeLocation();
-      new VenuesListRequester().execute(currenLocation);
-
       adapter = new VenuesAdapter(this, venues);
-
       venuesListview.setAdapter(adapter);
-
       venuesListview.setOnItemClickListener(new AdapterView.OnItemClickListener()
       {
 
@@ -74,10 +72,24 @@ public class VenuesActivity extends Activity
          }
 
       });
-
+   }
+   
+   @Override
+   protected void onStart()
+   {
+      super.onStart();
+      initilizeVenuesList();
+   }
+   
+   @Override
+   protected void onStop()
+   {
+      super.onStop();
+      LocationManager locator = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+      locator.removeUpdates(locationUpdatesListener);
    }
 
-   private CurrentUserLocation initializeLocation()
+   private void initilizeVenuesList()
    {
       LocationManager locator = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
       boolean gpsLocationAccessible = locator.isProviderEnabled(LocationManager.GPS_PROVIDER);
@@ -86,35 +98,34 @@ public class VenuesActivity extends Activity
 
       validateLocationAccessibility(gpsLocationAccessible, networkLocationAccessible);
 
-      CurrentUserLocation currenLocation = new CurrentUserLocation();
+      // Define a listener that responds to location updates
+      locationUpdatesListener = new LocationUpdatesListener();
+
+
+      Location netLocation = null;
+      Location gpsLocation = null;
       if (networkLocationAccessible)
       {
-         Location location = locator.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-         if (null != location)
-         {
-            currenLocation.setLatitude(location.getLatitude());
-            currenLocation.setLongitude(location.getLongitude());
-         }
+         locator.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+               LocationAccuracy.UPDATE_PERIOD, LocationAccuracy.UPDATE_DISTANCE,
+               locationUpdatesListener);
+         netLocation = locator.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
       }
 
       if (gpsLocationAccessible)
       {
-         Location location = locator.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-         if (null != location)
-         {
-            currenLocation.setLatitude(location.getLatitude());
-            currenLocation.setLongitude(location.getLongitude());
-         }
+         locator.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+               LocationAccuracy.SIGNIFICANT_PERIOD, LocationAccuracy.SIGNIFICANT_DISTANCE,
+               locationUpdatesListener);
+         gpsLocation = locator.getLastKnownLocation(LocationManager.GPS_PROVIDER);
       }
 
-      //Send Fake location for testing if not any
-      if (!currenLocation.isInitialized())
+      if (!isVenuesWereInilizedBefore())
       {
-         currenLocation.setLatitude(52.5295667f);
-         currenLocation.setLongitude(13.4564908f);
+         boolean isGpsNewerAndMoreAccurate = LocationAccuracy.isBetterLocation(gpsLocation,
+            netLocation);
+         updateVenuesUponLocation(isGpsNewerAndMoreAccurate ? gpsLocation : netLocation);
       }
-      return currenLocation;
-
    }
 
    private void validateLocationAccessibility(boolean gpsLocationAccessible,
@@ -183,7 +194,43 @@ public class VenuesActivity extends Activity
       }
    }
 
-   public class VenuesListRequester extends
+   private void updateVenuesUponLocation(Location newLocation)
+   {
+      if (null != newLocation)
+      {
+         boolean canBeTreatedAsNewerAndMoreAccurate = LocationAccuracy.isBetterLocation(
+               newLocation, lastLocation);
+         if (canBeTreatedAsNewerAndMoreAccurate)
+         {
+            lastLocation = newLocation;
+            CurrentUserLocation locationInfo = LocationTranslator.translate(newLocation);
+            new VenuesListUpdater().execute(locationInfo);
+         }
+      }
+   }
+
+   private final class LocationUpdatesListener implements LocationListener
+   {
+      public void onLocationChanged(Location newLocation)
+      {
+         // Called when a new location is found by the network location provider.
+         updateVenuesUponLocation(newLocation);
+      }
+
+      public void onStatusChanged(String provider, int status, Bundle extras)
+      {
+      }
+
+      public void onProviderEnabled(String provider)
+      {
+      }
+
+      public void onProviderDisabled(String provider)
+      {
+      }
+   }
+
+   public class VenuesListUpdater extends
          AsyncTask<CurrentUserLocation, Void, VenuesNearbyResponse>
    {
 
@@ -193,7 +240,7 @@ public class VenuesActivity extends Activity
          HttpParams httpParams = new BasicHttpParams();
          httpParams.setParameter(CoreProtocolPNames.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
          HttpClient client = new DefaultHttpClient(httpParams);
-         HttpPost httppost = new HttpPost("http://api.dev.friendbuy.de/venue/location");
+         HttpPost httpPost = new HttpPost("http://api.dev.friendbuy.de/venue/location");
 
          VenuesNearbyResponse venuesNearby = new VenuesNearbyResponse();
          Gson gson = new Gson();
@@ -204,9 +251,9 @@ public class VenuesActivity extends Activity
          {
             StringEntity entityRequest = new StringEntity(currenLocationJson);
             entityRequest.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-            httppost.setEntity(entityRequest);
+            httpPost.setEntity(entityRequest);
 
-            HttpResponse response = client.execute(httppost);
+            HttpResponse response = client.execute(httpPost);
 
             int status = response.getStatusLine().getStatusCode();
 
@@ -229,10 +276,15 @@ public class VenuesActivity extends Activity
 
       protected void onPostExecute(VenuesNearbyResponse venuesNearby)
       {
+         venues.clear();
          venues.addAll(venuesNearby.getVenues().getVenue());
          adapter.notifyDataSetChanged();
       }
 
    }
 
+   private boolean isVenuesWereInilizedBefore()
+   {
+      return !venues.isEmpty();
+   }
 }

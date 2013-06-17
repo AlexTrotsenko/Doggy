@@ -11,6 +11,7 @@ public class VenueInfo
    private int distance;
    private String maxDogSize;
    List<VenuePicture> Picture;
+   
    public int getId()
    {
       return id;
